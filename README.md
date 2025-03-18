@@ -17,7 +17,7 @@ The proposed Private Proof API offers a privacy-centric solution, ensuring that 
 
 This API uses Zero-Knowledge Proofs (ZKPs) to allow analysis of potentially identifiable signals while providing only a limited verdict output.
 For example, it empowers anti-fraud services to verify whether a user possesses an unmodified stored timestamp older than some provided timestamp without disclosing any additional user data.
-This approach strikes a balance between user privacy and anti-fraud capabilities by enabling websites to request a reputation signal (such as [profile age](https://github.com/antifraudcg/proposals/issues/9)) on which the user agent can enforce meaningful privacy constraints, while making the signal useful enough to remove the need for other burdensome or invasive checks, and allow the user to clear said signal at will.
+This approach strikes a balance between user privacy and anti-fraud capabilities by enabling websites to request a reputation signal (such as [profile age](https://github.com/antifraudcg/proposals/issues/9)) on which the user agent can enforce meaningful privacy constraints, while making the signal useful enough to remove the need for other burdensome or invasive checks, and allowing the user to clear said signal at will.
 
 ## Goals
 
