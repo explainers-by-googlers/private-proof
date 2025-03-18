@@ -310,3 +310,73 @@ When `sendProofForLessThanOrEqual()` is called this should trigger a process wit
 The fetch request may be redirected, even to other sites, but if any are non-HTTPS URLs the fetch request will be aborted and `sendProofForLessThanOrEqual()` will reject.
 
 If the server accepts and verifies the proof via the Proof Verification Algorithm then a status 200 should be set and the returned body should be valid JSON, otherwise `sendProofForLessThanOrEqual()` will be rejected.
+
+## Example
+
+Consider a user who visits the website for their local theater to buy a ticket for their favorite artist.
+They encounter a challenge from the theater’s anti-fraud system, which trusts users who already passed a challenge more than a day ago.
+Users who were not considered trusted would have to pass a challenge.
+
+### Client Side
+
+```javascript
+function maybeRunChallenge() {
+  const ppm = await window.getPrivateProofManager();
+
+  // If a token was already set, let's try to validate it!
+  const has_token = await ppm.hasToken();
+  if (has_token) {
+    const one_day_ago = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+    try {
+      // The UUID is used to tie this specific context to the proof validation.
+      // This should be sent down by the server as part of loading the page.
+      const uuid = getProofId();
+      // This generates a proof and sends it back to the server for validation.
+      const proof_result = await ppm.sendProofForLessThanOrEqual(
+        one_day_ago, uuid, https://aaf.example/proof');
+      // We can set cookies or other data returned.
+      setDataFromProof(proof_result);
+      // If the proof passed, we can bypass the challenge (and maybe set other
+      // data).
+      if (proofWasPassed(proof_result)) {
+        return;
+      }
+    } catch (_) {
+      // We do not want to clear the token here as we would end up clearing
+      // the token it had aged into being able to produce valid proofs.
+    }
+  }
+
+  // Since we lack a proof, we need to do the challenge.
+  const challenge_result = await runChallenge();
+  // We can set cookies or other data returned.
+  setDataFromChallenge(challenge_result);
+  // If the challenge passed we should request a token to bypass challenges
+  // after a day.
+  if (challengeWasPassed(challenge_result) && !has_token) {
+    await ppm.requestToken('https://aaf.example/token');
+  }
+}
+```
+
+### Server Side
+
+The server needs to respond to the integer-token-request JSON (in a request validated by successful challenge data) and generate a token using the current time as VALUE in the Token Generation Algorithm and send it back in integer-token-issuance JSON.
+
+The server needs to respond to the integer-lte-proof JSON by (1) running the Proof Validation Algorithm and (2) send back cookies/data communicating that result in JSON form.
+If the proof can be validated this would signify that the user agent passed verification at least a day ago, if the proof cannot be validated then storage has been cleared within the last day or the user agent has not been seen before. 
+
+## Integrations
+
+### Browser UX
+
+There should be a way to clear Private Proof API data alongside other data in the user agent UX.
+There should be a way to enable/disable the Private Proof API itself for specific or all sites.
+
+### Clear-Site-Data Header
+
+The Private Proof API data should be cleared if a “cookies” or “*” directives are received.
+
+### Developer Tools
+
+It should be possible to examine the underlying tokens stored and monitor token storage and proof generation requests for debugging purposes.
