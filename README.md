@@ -61,3 +61,131 @@ The site then makes a request for proofs to be sent back which demonstrate that 
 See the following sequence diagram for an overview of the API flow:
 
 ![](./images/sequence-diagram.png)
+
+### Zero-Knowledge Proofs
+
+The cryptography underpinning the Private Proof API is outlined in the whitepaper: [Anonymous Credentials with Range Proofs and Rate Limiting](https://github.com/SamuelSchlesinger/authenticated-pseudonyms/blob/dev/design/Range.pdf).
+This approach leans on the existing Anonymous Credentials literature and the many techniques which have been developed to communicate authenticated information without revealing any longitudinal identifiers.
+We take inspiration from papers such as:
+
+* [Sharp: Short Relaxed Range Proofs](https://ia.cr/2022/1153)
+* [A Verifiable Random Function With Short Proofs and Keys](https://eprint.iacr.org/2004/310.pdf)
+* [Revisiting Keyed-Verification Anonymous Credentials](https://eprint.iacr.org/2024/1552)
+* [Revisiting BBS Signatures](https://ia.cr/2023/275)
+* [How to Win the Clone Wars: Efficient Periodic n-Times Anonymous Authentication](https://eprint.iacr.org/2006/454)
+
+The five core algorithms required for our proposed solution are described below, and these are used in the Token Storage and Proof Generation sections.
+For further details on the importance of `EPOCH_*` variables and rate-limiting see the Token Distribution section.
+
+#### Token Request Algorithm
+
+The user agent performs this algorithm to request a token from the server.
+
+```
+Inputs:
+  EPOCH_LIMIT_SECRET: Browser's private epoch-limit key
+Intermediate:
+  EPOCH_LIMIT_PUBLIC: Public epoch-limit key generated from EPOCH_LIMIT_SECRET
+  EPOCH_LIMIT_PROOF: A bytestring representing a zero-knowledge proof of
+                    knowledge of EPOCH_LIMIT_SECRET.
+Output:
+  REQUEST: Bytestring containing EPOCH_LIMIT_PUBLIC and EPOCH_LIMIT_PROOF
+```
+
+#### Token Issuance Algorithm
+
+This algorithm is performed by the server issuing a token to be stored by the user agent.
+
+```
+Inputs:
+  SITE_SECRET: Server's private key
+  REQUEST: Bytestring containing EPOCH_LIMIT_PUBLIC and EPOCH_LIMIT_PROOF
+  VALUE: Integer to sign (Between 0 and 236/3)
+Intermediate:
+  SIG: Signature of REQUEST and VALUE using SITE_SECRET
+Output:
+  TOKEN: Bytestring containing VALUE and SIG
+```
+
+#### Token Verification Algorithm
+
+This algorithm is executed by the user agent to verify that the token they received was issued using the public key that they expect.
+
+```
+Inputs:
+  EPOCH_LIMIT_SECRET: Browser's private epoch-limit key
+  SITE_PUBLIC: Public key generated from SITE_SECRET
+  TOKEN: Bytestring containing VALUE and SIG
+Output:
+  VALID: Boolean indicating whether TOKEN was issued using EPOCH_LIMIT_SECRET
+         and SITE_PUBLIC.
+```
+
+#### Proof Generation Algorithm
+
+This algorithm is executed by the user agent to produce a proof that the token contained within the browser is less than or equal to some other value.
+
+```
+Inputs:
+  EPOCH_LIMIT_SECRET: Browser's private epoch-limit key
+  SITE_PUBLIC: Public key generated from SITE_SECRET
+  TOKEN: Bytestring containing VALUE and SIG
+  BOUND: Integer which we want to prove VALUE is less than or equal to
+  EPOCH_LENGTH: Integer in seconds representing the length of a given epoch
+                for rate limiting purposes.
+  EPOCH_LIMIT: Integer between 0 and 2^17 exclusive representing the maximum
+               tokens possible to issue in a given epoch.
+  COUNTER: Amount of proofs issued in current epoch (excluding this one).
+  PROOF_ID: String used to trace this specific proof generation request.
+Intermediates:
+  EPOCH: The current epoch according to EPOCH_LENGTH and the current time.
+  EPOCH_LIMIT_RANDOM: Output of a VRF seeded by EPOCH_LIMIT_SECRET and applied 
+                     to EPOCH and COUNTER.
+  T_PROOF: Non-Interactive Zero-Knowledge Proof that TOKEN was issued using
+           EPOCH_LIMIT_SECRET and SITE_PUBLIC, that VALUE <= BOUND, that
+           EPOCH_LIMIT_RANDOM was properly calculated, that COUNTER <
+           EPOCH_LIMIT, that the current time is within EPOCH, and of
+           PROOF_ID's value.
+Output:
+  PROOF: Bytestring containing EPOCH_LIMIT_RANDOM and T_PROOF.
+```
+
+#### Proof Verification Algorithm
+
+This algorithm is executed by the server to validate a proof from the user agent attempting to demonstrate that the browser’s private token is less than or equal to the value the server wants to compare it to.
+
+```
+Inputs:
+  SITE_SECRET: Server's private key
+  PROOF: Bytestring containing EPOCH_LIMIT_RANDOM and T_PROOF.
+  BOUND': Integer which we want to prove VALUE is less than or equal to
+  EPOCH_LENGTH: Integer in seconds representing the length of a given epoch
+                for rate limiting purposes.
+  EPOCH_LIMIT: Integer between 0 and 2^17 exclusive representing the maximum
+              tokens possible to issue in a given epoch.
+  PROOF_ID: String used in generating PROOF to demonstrate provenance.
+Intermediates:
+  EPOCH: The current epoch according to EPOCH_LENGTH and the current time. The
+         server may decide to try multiple EPOCHs (for example, the ones
+         immediately before or after) to prevent issues around EPOCH
+         boundaries.
+Output:
+  VALID: Boolean indicating whether or not PROOF is valid.
+```
+
+### Site Public Key and Epoch Limit Distribution
+
+Any site wishing to use the Private Proof API must ensure that user agents have access to the public key they wish to use as `SITE_PUBLIC` in the Token Verification and Proof Generation Algorithms as well as the `EPOCH_LENGTH` and `EPOCH_LIMIT` used in the Proof Generation Algorithm.
+This could be accomplished by publishing the public key and epoch limit in a [`.well-known`](https://datatracker.ietf.org/doc/html/rfc8615#section-3) location on the site.
+Further, user agents must ensure that they are not seeing a different key or epoch limit than other user agents, as this could be used to de-anonymize the user agent.
+This can be achieved via distribution of the public keys and epoch limit to the browser or some out of band auditing mechanism.
+
+### Permissions Policy
+
+We would create one new [policy-controlled feature](https://w3c.github.io/webappsec-permissions-policy/#policy-controlled-feature): “private-proofs”.
+The default [allowlist](https://w3c.github.io/webappsec-permissions-policy/#policy-controlled-feature-default-allowlist) for this feature would be “*”, allowing all contexts (embedded or otherwise) to use the feature.
+Using a default of “self” may seem preferable, but this would discourage adoption as it requires those using anti-abuse/anti-fraud systems wanting Private Proof API access to modify their top-frame headers.
+
+### Token Storage
+
+### Proof Generation
