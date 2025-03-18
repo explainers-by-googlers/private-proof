@@ -460,3 +460,53 @@ Although we have mitigations to lower the value of sharing tokens between user a
 A developer can mitigate this risk by dynamically generating a UUID to identify a frame where content was loaded, and then use it in the call to `sendProofForLessThanOrEqual()` as the `id` argument.
 This `id` will be tied to that proof and sent back as part of the proof validation request.
 This helps ensure the same context that requested the proof is the one attempting to redeem it, and that the proof hasn’t been exfiltrated for use in some other unrelated transaction.
+
+## Future Work
+
+### Additional Predicates/Types
+
+Although a ‘less than or equal’ predicate can assist with a number of use cases, we may want to expand to support others (e.g., ‘greater than’ or ‘set intersection’) over time.
+Additionally, we might also need to support token types beyond integers (e.g., strings).
+The API should be designed to enable this future expansion without over-adjusting in anticipation flows we don’t intend to implement now.
+
+### Additional Algorithms
+
+The `Private Proof Info` json includes information on the algorithm used.
+This is to allow future Zero Knowledge Proof algorithms to be supported.
+We may eventually need a way for the server and user agent to negotiate on the type of algorithms supported.
+
+### Issuer Fungibility
+
+Proof verifiers are currently limited to drawing inferences from tokens that were issued using their own signing key, even though additional tokens from other issuers with semantically equivalent content (e.g. a timestamp of when the client was first seen) could exist on the user agent.
+One way to allow sharing of tokens without requiring sharing of private signing keys would be a [ring signature](https://en.wikipedia.org/wiki/Ring_signature).
+If issuers collaborated through the use of a shared signature, the verifier could be sent tokens from any site in that group.
+For the timestamp example, this could lead to a more accurate first-seen time as it would be the first time seen by any of the issuers in the group instead of each individually.
+This approach would need to solve for:
+
+1. Equity of access to issuer groups. Additional performance costs as new issuers are added to any given ring pressure groups to stay small.
+1. The potential for some issuers in the group to issue invalid/incorrect tokens used in proofs for verifiers unable to know the source.
+1. Forced convergence of semantics in a group (e.g., all tokens in a group must be a UTC timestamp) is at odds with generalization of proof systems.
+
+## Related Work
+
+### Encrypted data in third-party cookies
+
+Historically, websites could evaluate whether a user was “first-seen” via third-party cookies.
+Websites would encrypt a timestamp and set it as a third party cookie.
+At a later time and in a different context, these websites could read the cookie and evaluate the timestamp.
+This approach prevents the user from inspecting the contents of the cookie, exposes the high-entropy timestamp, and even allows the relay of unique identifiers alongside or instead of the timestamp.
+This approach is becoming less viable with third-party cookies being disabled due to user choice or user agent default.
+
+### Private State Token API
+
+With the [Private State Token API](https://wicg.github.io/trust-token-api/), sites can transmit a predetermined value between storage partitioned contexts.
+However, there are several limitations: first, the tokens issued to the browser are single use, meaning that if the user agent runs out of them they can no longer anonymously communicate that information.
+Further, this means that we have to store a large number of them in the browser.
+In contrast, the Private Proof API is able to keep only one token per-issuer in the browser at any given time, and generate unlinkable Zero-Knowledge Proofs using that single token.
+There is still value in the rigidity of the issuance/redemption pattern in Private State Tokens, and signal from that API may be preferred to secure specific high-risk actions where client reputation alone would not suffice.
+
+### Shared Storage API
+
+The [Shared Storage API](https://wicg.github.io/shared-storage/) similarly provides unpartitioned storage with strict limitations on output gates.
+The API is flexible and general purpose, with the design not limiting the flow of data between various inputs and output gates.
+This storage provides no inherent signing or verification of the data within (any script running in the right context could set data).
