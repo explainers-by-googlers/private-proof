@@ -188,4 +188,125 @@ Using a default of “self” may seem preferable, but this would discourage ado
 
 ### Token Storage
 
+It will be possible to store a single `SITE_PUBLIC`, `EPOCH_LIMIT_SECRET`, `TOKEN`, and `COUNTER` (as described in the Zero Knowledge Proofs section) for any site.
+Only `SITE_PUBLIC` must be known in advance of using this part of the API.
+
+#### JavaScript API
+
+The following JavaScript API will be exposed for use in HTTPS contexts:
+
+```javascript
+partial interface Window {
+
+  // Returns the control interface for the Private Proof API. This
+  // promise rejects if no public key has been distributed for the
+  // site of the current frame, if this context is not https, if
+  // the context does not have permission via the `private-proofs`
+  // policy, or if rate limiting was exceeded for this function.
+  Promise<PrivateProofManager> getPrivateProofManager();
+};
+
+// The control interface for the Private Proof API.
+// Additional parts are in the 'Proof Generation' section.
+partial interface PrivateProofManager {
+
+  // Returns true if a token has already been stored for this site
+  // and false otherwise. We depend on rate limiting in the call to
+  // getPrivateProofManager to secure this API.
+  Promise<boolean> hasToken();
+
+  // Requests a token be issued by `url` and stores it for this
+  // context's site. Returns true if the request was successful
+  // and a valid token was stored; returns false if `url` was not
+  // on the same site as the current context, if `url` is not HTTPS,
+  // if no token is returned, if the token does not pass the Token
+  // Verification Algorithm, or if rate limiting was exceeded for this
+  // function.
+  Promise<boolean> requestToken(USVString url);
+
+  // Clears any stored token, does not reject if there is no token
+  // stored. We depend on rate limiting in the call to
+  // getPrivateProofManager to secure this API.
+  Promise<void> clearToken();
+}
+```
+
+#### HTTP API
+
+When `requestToken()` is called this should trigger a process with access to the underlying data for the relevant site to randomly generate a new `EPOCH_LIMIT_SECRET`, run the Token Request Algorithm using it, and then perform a fetch request (from a context matching the context which called the API) to the `url` provided with the following HTTP Request JSON body:
+
+```javascript
+{
+  "type": "integer-token-request",
+  // <request> is a base64 encoded string representing the REQUEST issued
+  // by the Token Request Algorithm.
+  "request": "<request>"
+}
+```
+
+The fetch request may be redirected, even to other sites, but if any are non-HTTPS urls the fetch request will be aborted and `requestToken` will return false.
+
+If the site wants to store a token in response, it should include the following HTTP Response JSON body with a 200 status:
+
+```javascript
+{
+  "type": "integer-token-issuance",
+  // <issuance> is a base64 encoded string representing the TOKEN produced by
+  // the Token Issuance Algorithm.
+  "issuance": "<issuance>"
+}
+```
+
+If the integer-token-request JSON is valid according to the Token Verification Algorithm then the `EPOCH_LIMIT_SECRET` used and `TOKEN` received will be stored for that site and that site’s `COUNTER` will be reset to 0.
+If the integer-token-issuance JSON is missing or invalid or the status is not 200 the storage will be aborted without impacting any existing `EPOCH_LIMIT_SECRET`/`TOKEN/COUNTER` stored for that site and `requestToken` will return false.
+
 ### Proof Generation
+
+It will be possible to generate `PROOF`s for any site with a stored `SITE_PUBLIC`, `EPOCH_LIMIT_SECRET`, `TOKEN`, `EPOCH_LIMIT`, `EPOCH_LENGTH`, and `COUNTER` (as described in the Zero Knowledge Proofs section).
+
+#### JavaScript API
+
+The following JavaScript API will be exposed for use in HTTPS contexts:
+
+```javascript
+// The control interface for the Private Proof API.
+// Additional parts are in the 'Token Storage' section.
+partial interface PrivateProofManager {
+  // Generates a proof that the token stored is less than or equal to
+  // `bound` and of the value of `id` using the Proof Generation Algorithm and
+  // sends it to `url`. 
+  // Returns the decoded JSON blob sent in response if the proof was
+  // successfully generated and the status in response was 200; rejects 
+  // if the Proof Generation Algorithm failed, if `url` was not on the
+  // same site as this context, if `url` was not HTTPS, if the request
+  // failed, if decoding the response fails, or if rate limiting was
+  // exceeded for this function.
+  Promise<any> sendProofForLessThanOrEqual(
+                 number bound, USVString id, USVString url);
+}
+```
+
+#### HTTP API
+
+When `sendProofForLessThanOrEqual()` is called this should trigger a process with access to the underlying data for the relevant site to run the Proof Generation Algorithm using `bound` and performs a fetch request (from a context matching the context which called the API) on `url` with the following HTTP Request JSON body:
+
+```javascript
+{
+  "type": "integer-lte-proof",
+  // <proof> would be replaced with the base64 encoded string representing
+  // the PROOF from the Proof Generation Algorithm.
+  "proof": "<proof>",
+  // <bound> would be replaced with the values used in the call to
+  // `sendProofForLessThanOrEqual`. This information is required for
+  // the Proof Validation Algorithm.
+  "bound": <bound>,
+  // <id> would be replaced with the values used in the call to
+  // `sendProofForLessThanOrEqual`. This information is required for
+  // the Proof Validation Algorithm.
+  "id": <id>
+}
+```
+
+The fetch request may be redirected, even to other sites, but if any are non-HTTPS URLs the fetch request will be aborted and `sendProofForLessThanOrEqual()` will reject.
+
+If the server accepts and verifies the proof via the Proof Verification Algorithm then a status 200 should be set and the returned body should be valid JSON, otherwise `sendProofForLessThanOrEqual()` will be rejected.
