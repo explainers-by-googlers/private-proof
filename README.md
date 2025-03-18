@@ -48,7 +48,7 @@ We already see this use case with the SelectURL Shared Storage API, which can be
 
 Payment providers often do per-card verifications for online transactions to mitigate the risk of theft.
 While payment providers know many details about the cardholder and their identity is not private at checkout, it can be useful for payment providers to verify a checkout has been completed on the client previously.
-[Future work](https://docs.google.com/document/d/1SmdxtvIcCY8q7NB_rDkDa0NeuHukEJ6NT_GcGp-HoPY/edit?tab=t.0#heading=h.q8ytx891vfg1) may also unlock additional functionality for this use case.
+Future work may also unlock additional functionality for this use case.
 
 ## Proposed Solution
 
