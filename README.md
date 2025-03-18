@@ -380,3 +380,83 @@ The Private Proof API data should be cleared if a “cookies” or “*” direc
 ### Developer Tools
 
 It should be possible to examine the underlying tokens stored and monitor token storage and proof generation requests for debugging purposes.
+
+## Alternatives Considered
+
+### Shared Storage API
+
+We could store the token using the [Shared Storage API](https://wicg.github.io/shared-storage/) and make it available to be updated and read in additional contexts, but this significantly lowers data security.
+If the token can be updated outside of the Private Proof API, then the source of the token itself is less certain.
+For example: data could be being exfiltrated/infiltrated by some third-party script.
+If the token can be read outside of the generation of proofs in the browser process, then although Shared Storage outputs are gated, this seems to lower the bar for data exfiltration (making the data accessible by a compromised renderer) for no clear benefit (as the token is essentially only valuable for proof generation).
+
+### Fetch API Extension
+
+This could be developed around a fetch extension to allow specific requests from the renderer to attach generated proofs instead of the proof exchange happening out-of-band.
+This likely makes less sense as we anticipate proof generation to be strictly rate limited.
+It would be better for the site to "bless" cookies used in future requests, rather than encourage dependence on requests generally including attached proofs.
+
+### HTTP Proof Type API
+We could allow the specific proof type (for example, < 1000) to be specified in the HTTP API instead of the JavaScript API.
+However, this would require a second round trip and likely only make sense if we think there’s some reason to treat the specific type of proof generated as sensitive in some way.
+
+## Privacy and Security Considerations
+
+### Deterministic Identification
+
+Randomness is integrated into the generation of `PROOF`s such that the same valid TOKEN on two machines would not generate the same `PROOF`  even if requested at the same time.
+
+### Brute Force Identification
+
+Public keys are distributed to user agents in advance of API usage instead of being read at the time the API is used for some site to prevent unique keys from being sent to each user agent.
+If it were possible to send unique keys to each user agent, the server could then request a proof and attempt to validate every key they had against the proof, as a way to identify the user.
+This could be effective if the site was dividing users into a limited number of pools (each of which shares a key) or if the total number of users were small.
+
+### Bound Search
+
+To prevent a site from searching the space of possible `VALUE`s using different `BOUND`s, there must be strict rate limiting on the number of proofs any given site can request in a given timeframe.
+This limit would be enforced by the User Agent independent of `EPOCH_LENGTH` and `EPOCH_LIMIT`, which operate on a timescale defined by the site itself (see the Token Distribution section for the security concern those values seek to address).
+
+### Public Suffixes
+
+The definition of ‘site’ used for token storage and proof generation should be eTLD+1 as derived from the [Public Suffix List](https://publicsuffix.org/).
+For some origin which allows public registration of subdomains (e.g., service.example) we do not want to allow tokens to be shared between the subdomains (e.g., mine.service.example and other.service.example).
+Every subdomain should be forced into using only their own token to prevent information leaking between unassociated origins.
+
+### Token Breadcrumb Identification
+
+One could imagine a sophisticated attack where a site (for example, `tracking.example`) generated a series of sites for each user and set tokens for each of them (for example, the user “test” would have tokens set on `t.example`, `te.example`, `tes.example`, and `test.example`).
+This would allow deanonymization of the user through third-party contexts exploring down the alphabetical tree to see where the trail of tokens lead.
+This should be countered through rate limits on a per-unit-time, per-page, per-site (or some combination) basis for `getPrivateProofManager()`, `requestToken()`, and/or `sendProofForLessThanOrEqual()` to prevent significant call volumes and allow deanonymization.
+Further, limits could be imposed on the maximum number of tokens to be stored on any given client.
+
+### Side Channels
+
+One could imagine some third-party site embedded in two other top-level sites both calling `requestToken()`, `clearToken()`, and `hasToken()` purely as a way of transmitting bits based on the pattern of token clears and sets.
+This should be prevented with rate limits on `requestToken()`, based on the site requesting the new token to be stored.
+We'll try to prevent revealing information about other origins' use of the API, including when we're enforcing rate limiting.
+
+### Token Distribution
+
+There’s a risk that fraudulent/abusive users could copy the token between multiple machines in an attempt to abuse the "likely benign" reputation.
+This is mitigated by the `EPOCH_LIMIT_RANDOM` sent back as part of the `PROOF` as described in the Zero Knowledge Proofs section.
+Within a given epoch of time, each issued token will only be able to create a limited number of valid `EPOCH_LIMIT_RANDOM`s based on `EPOCH_LENGTH` and `EPOCH_LIMIT`.
+The limit is designed to ensure that an individual user can properly use a website, while multiple attackers using the same issued token will find that they are not able to scale up their requests, only using one issued token, without violating their privacy and thus allowing them to be re-identified.
+Instead, these attackers will have to revisit the issuer, allowing an opportunity to authenticate them again.
+
+### Resource Consumption
+
+The Proof Generation Algorithm is expected to be demanding on low end devices, so rate limits need to be imposed on `sendProofForLessThanOrEqual()` to prevent it from dominating CPU or power usage.
+We should be sure to produce proofs as quickly and efficiently as possible to mitigate timing attacks and ensure this signal stays available on devices of all costs/ages.
+
+### Process Isolation
+
+Where possible we should ensure the renderer does not get direct access to underlying tokens so that a compromised renderer is not able to modify the signal directly or read it for tracking purposes.
+This is why the design calls for async functions (to permit IPC to another process which manages access checks and data).
+
+### Proof Tracing
+
+Although we have mitigations to lower the value of sharing tokens between user agents or generating multiple proofs from the same token, there could still be residual value in exfiltrating individual proofs from trusted user agents for use to validate the actions of malicious ones (especially if the epoch window is wide and the epoch limit is high).
+A developer can mitigate this risk by dynamically generating a UUID to identify a frame where content was loaded, and then use it in the call to `sendProofForLessThanOrEqual()` as the `id` argument.
+This `id` will be tied to that proof and sent back as part of the proof validation request.
+This helps ensure the same context that requested the proof is the one attempting to redeem it, and that the proof hasn’t been exfiltrated for use in some other unrelated transaction.
