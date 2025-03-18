@@ -86,7 +86,8 @@ Inputs:
   EPOCH_LIMIT_SECRET: Browser's private epoch-limit key
 Intermediate:
   EPOCH_LIMIT_PUBLIC: Public epoch-limit key generated from EPOCH_LIMIT_SECRET
-  EPOCH_LIMIT_PROOF: A bytestring representing a zero-knowledge proof of knowledge of EPOCH_LIMIT_SECRET.
+  EPOCH_LIMIT_PROOF: A bytestring representing a zero-knowledge proof of
+                    knowledge of EPOCH_LIMIT_SECRET.
 Output:
   REQUEST: Bytestring containing EPOCH_LIMIT_PUBLIC and EPOCH_LIMIT_PROOF
 ```
@@ -116,7 +117,8 @@ Inputs:
   SITE_PUBLIC: Public key generated from SITE_SECRET
   TOKEN: Bytestring containing VALUE and SIG
 Output:
-  VALID: Boolean indicating whether TOKEN was issued using EPOCH_LIMIT_SECRET and SITE_PUBLIC.
+  VALID: Boolean indicating whether TOKEN was issued using EPOCH_LIMIT_SECRET
+         and SITE_PUBLIC.
 ```
 
 #### Proof Generation Algorithm
@@ -129,14 +131,21 @@ Inputs:
   SITE_PUBLIC: Public key generated from SITE_SECRET
   TOKEN: Bytestring containing VALUE and SIG
   BOUND: Integer which we want to prove VALUE is less than or equal to
-  EPOCH_LENGTH: Integer in seconds representing the length of a given epoch for rate limiting purposes.
-  EPOCH_LIMIT: Integer between 0 and 2^17 exclusive representing the maximum tokens possible to issue in a given epoch.
+  EPOCH_LENGTH: Integer in seconds representing the length of a given epoch
+                for rate limiting purposes.
+  EPOCH_LIMIT: Integer between 0 and 2^17 exclusive representing the maximum
+               tokens possible to issue in a given epoch.
   COUNTER: Amount of proofs issued in current epoch (excluding this one).
   PROOF_ID: String used to trace this specific proof generation request.
 Intermediates:
   EPOCH: The current epoch according to EPOCH_LENGTH and the current time.
-  EPOCH_LIMIT_RANDOM: Output of a VRF seeded by EPOCH_LIMIT_SECRET and applied to EPOCH and COUNTER.
-  T_PROOF: Non-Interactive Zero-Knowledge Proof that TOKEN was issued using EPOCH_LIMIT_SECRET and SITE_PUBLIC, that VALUE <= BOUND, that EPOCH_LIMIT_RANDOM was properly calculated, that COUNTER < EPOCH_LIMIT, that the current time is within EPOCH, and of PROOF_ID's value.
+  EPOCH_LIMIT_RANDOM: Output of a VRF seeded by EPOCH_LIMIT_SECRET and applied 
+                     to EPOCH and COUNTER.
+  T_PROOF: Non-Interactive Zero-Knowledge Proof that TOKEN was issued using
+           EPOCH_LIMIT_SECRET and SITE_PUBLIC, that VALUE <= BOUND, that
+           EPOCH_LIMIT_RANDOM was properly calculated, that COUNTER <
+           EPOCH_LIMIT, that the current time is within EPOCH, and of
+           PROOF_ID's value.
 Output:
   PROOF: Bytestring containing EPOCH_LIMIT_RANDOM and T_PROOF.
 ```
@@ -150,13 +159,19 @@ Inputs:
   SITE_SECRET: Server's private key
   PROOF: Bytestring containing EPOCH_LIMIT_RANDOM and T_PROOF.
   BOUND': Integer which we want to prove VALUE is less than or equal to
-  EPOCH_LENGTH: Integer in seconds representing the length of a given epoch for rate limiting purposes.
-  EPOCH_LIMIT: Integer between 0 and 2^17 exclusive representing the maximum tokens possible to issue in a given epoch.
+  EPOCH_LENGTH: Integer in seconds representing the length of a given epoch
+                for rate limiting purposes.
+  EPOCH_LIMIT: Integer between 0 and 2^17 exclusive representing the maximum
+              tokens possible to issue in a given epoch.
   PROOF_ID: String used in generating PROOF to demonstrate provenance.
 Intermediates:
-  EPOCH: The current epoch according to EPOCH_LENGTH and the current time. The server may decide to try multiple EPOCHs (for example, the ones immediately before or after) to prevent issues around EPOCH boundaries.
+  EPOCH: The current epoch according to EPOCH_LENGTH and the current time. The
+         server may decide to try multiple EPOCHs (for example, the ones
+         immediately before or after) to prevent issues around EPOCH
+         boundaries.
 Output:
   VALID: Boolean indicating whether or not PROOF is valid.
+
 ```
 
 ### Site Public Key and Epoch Limit Distribution
