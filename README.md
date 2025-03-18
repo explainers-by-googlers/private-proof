@@ -235,7 +235,7 @@ partial interface PrivateProofManager {
 
 When `requestToken()` is called this should trigger a process with access to the underlying data for the relevant site to randomly generate a new `EPOCH_LIMIT_SECRET`, run the Token Request Algorithm using it, and then perform a fetch request (from a context matching the context which called the API) to the `url` provided with the following HTTP Request JSON body:
 
-```json
+```jsonc
 {
   "type": "integer-token-request",
   // <request> is a base64 encoded string representing the REQUEST issued
@@ -248,7 +248,7 @@ The fetch request may be redirected, even to other sites, but if any are non-HTT
 
 If the site wants to store a token in response, it should include the following HTTP Response JSON body with a 200 status:
 
-```json
+```jsonc
 {
   "type": "integer-token-issuance",
   // <issuance> is a base64 encoded string representing the TOKEN produced by
@@ -290,7 +290,7 @@ partial interface PrivateProofManager {
 
 When `sendProofForLessThanOrEqual()` is called this should trigger a process with access to the underlying data for the relevant site to run the Proof Generation Algorithm using `bound` and performs a fetch request (from a context matching the context which called the API) on `url` with the following HTTP Request JSON body:
 
-```json
+```jsonc
 {
   "type": "integer-lte-proof",
   // <proof> would be replaced with the base64 encoded string representing
