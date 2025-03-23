@@ -333,7 +333,7 @@ function maybeRunChallenge() {
       const uuid = getProofId();
       // This generates a proof and sends it back to the server for validation.
       const proof_result = await ppm.sendProofForLessThanOrEqual(
-        one_day_ago, uuid, https://aaf.example/proof');
+        one_day_ago, uuid, 'https://aaf.example/proof');
       // We can set cookies or other data returned.
       setDataFromProof(proof_result);
       // If the proof passed, we can bypass the challenge (and maybe set other
