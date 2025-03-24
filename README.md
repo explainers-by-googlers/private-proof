@@ -60,8 +60,6 @@ The site then makes a request for proofs to be sent back which demonstrate that 
 
 See the following sequence diagram for an overview of the API flow:
 
-![](./images/sequence-diagram.png)
-
 ```mermaid
 sequenceDiagram
     participant Browser
@@ -72,6 +70,12 @@ sequenceDiagram
     Issuer->>Browser: response
     note over Browser: Builds credentials from response k.
     Note over Browser,Issuer: Issuance is over. Time passes...
+    note over Issuer: Decides upon threshold T*. Embeds T* in the<br/>JavaScript of the page.
+    Issuer->>Browser: HTML, possible via embedding.
+    note over Browser: Creates rate limiting token T(k, i, epoch)<br/>Proves that k, T is signed, T <= T* and<br/>that T(k, i, epoch) is correct.
+    Browser->>Issuer: T(k, i, epoch), proof
+    note over Issuer: Verifies proof.<br/>Ensures that T(k, i, epoch)<br/>hasn't been seen in this epoch.<br/>Builds arbirtary response.
+    Issuer->>Browser: response
 ```
 
 ### Zero-Knowledge Proofs
