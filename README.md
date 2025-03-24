@@ -62,6 +62,18 @@ See the following sequence diagram for an overview of the API flow:
 
 ![](./images/sequence-diagram.png)
 
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Issuer
+    note over Browser: Generate client private key k.<br/>Create request for credential<br/>bound to k.
+    Browser->>Issuer: request
+    note over Issuer: Verifies request, decides which value T<br/>to sign in cerdential. Creates response. 
+    Issuer->>Browser: response
+    note over Browser: Builds credentials from response k.
+    Note over Browser,Issuer: Issuance is over. Time passes...
+```
+
 ### Zero-Knowledge Proofs
 
 The cryptography underpinning the Private Proof API is outlined in the whitepaper: [Anonymous Credentials with Range Proofs and Rate Limiting](https://github.com/SamuelSchlesinger/authenticated-pseudonyms/blob/dev/design/Range.pdf).
