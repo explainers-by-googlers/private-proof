@@ -86,4 +86,4 @@ See answer 3.
 
 ## 22. What should this questionnaire have asked?
 
-What novel technical context would be helpful to understand this feature? [Anonymous Credentials with Range Proofs and Rate Limiting](https://github.com/SamuelSchlesinger/authenticated-pseudonyms/blob/dev/design/Range.pdf)
+What novel technical context would be helpful to understand this feature? [Anonymous Credentials with Range Proofs and Rate Limiting](https://github.com/SamuelSchlesinger/authenticated-pseudonyms/blob/dev/combined/design/Range.pdf)
