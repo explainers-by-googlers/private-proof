@@ -66,7 +66,7 @@ sequenceDiagram
     participant Issuer
     note over Browser: Generate client private key k.<br/>Create request for credential<br/>bound to k.
     Browser->>Issuer: request
-    note over Issuer: Verifies request, decides which value T<br/>to sign in cerdential. Creates response. 
+    note over Issuer: Verifies request, decides which value T<br/>to sign in credential. Creates response. 
     Issuer->>Browser: response
     note over Browser: Builds credentials from response k.
     Note over Browser,Issuer: Issuance is over. Time passes...
