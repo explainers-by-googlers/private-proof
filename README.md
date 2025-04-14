@@ -521,6 +521,14 @@ Further, this means that we have to store a large number of them in the browser.
 In contrast, the Private Proof API is able to keep only one token per-issuer in the browser at any given time, and generate unlinkable Zero-Knowledge Proofs using that single token.
 There is still value in the rigidity of the issuance/redemption pattern in Private State Tokens, and signal from that API may be preferred to secure specific high-risk actions where client reputation alone would not suffice.
 
+## Private Access Tokens API
+
+The [Private Access Tokens API]([https://www.ietf.org/archive/id/draft-ietf-privacypass-auth-scheme-01.html](https://www.ietf.org/archive/id/draft-private-access-tokens-01.html)), like the Private State Token API, is based on [Privacy Pass](https://privacypass.github.io/).
+Unlike the Private State Token API, the Private Access Tokens API attests to the validity of the device itself (currently, only supported for Apple devices).
+This design allows for rate limiting per-device+origin without revealing the origin to the attestor or the device to the issuer/redeemer.
+Like the Private State Token API, the tokens are single use (multiple redemptions are not possible).
+The Private Proof API does not offer device-specific verification as the token could always be cleared or overridden by the user.
+
 ### Shared Storage API
 
 The [Shared Storage API](https://wicg.github.io/shared-storage/) similarly provides unpartitioned storage with strict limitations on output gates.
