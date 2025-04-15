@@ -519,6 +519,7 @@ With the [Private State Token API](https://wicg.github.io/trust-token-api/), sit
 However, there are several limitations: first, the tokens issued to the browser are single use, meaning that if the user agent runs out of them they can no longer anonymously communicate that information.
 Further, this means that we have to store a large number of them in the browser.
 In contrast, the Private Proof API is able to keep only one token per-issuer in the browser at any given time, and generate unlinkable Zero-Knowledge Proofs using that single token.
+Further, the Private Proof API generates a fresh verdict based on the token value and the new bound being compared instead of simply relaying a prior verdict.
 There is still value in the rigidity of the issuance/redemption pattern in Private State Tokens, and signal from that API may be preferred to secure specific high-risk actions where client reputation alone would not suffice.
 
 ## Private Access Tokens API
