@@ -519,7 +519,16 @@ With the [Private State Token API](https://wicg.github.io/trust-token-api/), sit
 However, there are several limitations: first, the tokens issued to the browser are single use, meaning that if the user agent runs out of them they can no longer anonymously communicate that information.
 Further, this means that we have to store a large number of them in the browser.
 In contrast, the Private Proof API is able to keep only one token per-issuer in the browser at any given time, and generate unlinkable Zero-Knowledge Proofs using that single token.
+Further, the Private Proof API generates a fresh verdict based on the token value and the new bound being compared instead of simply relaying a prior verdict.
 There is still value in the rigidity of the issuance/redemption pattern in Private State Tokens, and signal from that API may be preferred to secure specific high-risk actions where client reputation alone would not suffice.
+
+## Private Access Tokens API
+
+The [Private Access Tokens API]([https://www.ietf.org/archive/id/draft-ietf-privacypass-auth-scheme-01.html](https://www.ietf.org/archive/id/draft-private-access-tokens-01.html)), like the Private State Token API, is based on [Privacy Pass](https://privacypass.github.io/).
+Unlike the Private State Token API, the Private Access Tokens API attests to the validity of the device itself (currently, only supported for Apple devices).
+This design allows for rate limiting per-device+origin without revealing the origin to the attestor or the device to the issuer/redeemer.
+Like the Private State Token API, the tokens are single use (multiple redemptions are not possible).
+The Private Proof API does not offer device-specific verification as the token could always be cleared or overridden by the user.
 
 ### Shared Storage API
 
