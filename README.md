@@ -213,6 +213,7 @@ Only `SITE_PUBLIC` must be known in advance of using this part of the API.
 The following JavaScript API will be exposed for use in HTTPS contexts:
 
 ```javascript
+[SecureContext]
 partial interface Window {
 
   // Returns the control interface for the Private Proof API. This
@@ -225,6 +226,7 @@ partial interface Window {
 
 // The control interface for the Private Proof API.
 // Additional parts are in the 'Proof Generation' section.
+[SecureContext]
 partial interface PrivateProofManager {
 
   // Returns true if a token has already been stored for this site
@@ -288,6 +290,7 @@ The following JavaScript API will be exposed for use in HTTPS contexts:
 ```javascript
 // The control interface for the Private Proof API.
 // Additional parts are in the 'Token Storage' section.
+[SecureContext]
 partial interface PrivateProofManager {
   // Generates a proof that the token stored is less than or equal to
   // `bound` and of the value of `id` using the Proof Generation Algorithm and
