@@ -80,7 +80,7 @@ sequenceDiagram
 
 ### Zero-Knowledge Proofs
 
-The cryptography underpinning the Private Proof API is outlined in the whitepaper: [Anonymous Credentials with Range Proofs and Rate Limiting](https://github.com/SamuelSchlesinger/authenticated-pseudonyms/blob/dev/combined/design/Range.pdf).
+The cryptography underpinning the Private Proof API is outlined in the whitepaper: [Anonymous Credentials with Range Proofs and Rate Limiting](https://github.com/SamuelSchlesinger/authenticated-pseudonyms/blob/dev/design/Range.pdf).
 This approach leans on the existing Anonymous Credentials literature and the many techniques which have been developed to communicate authenticated information without revealing any longitudinal identifiers.
 We take inspiration from papers such as:
 
